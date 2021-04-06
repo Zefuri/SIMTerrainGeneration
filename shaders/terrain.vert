@@ -18,7 +18,7 @@ out vec3 eyeView;
 vec2 hash(vec2 p) {
   p = vec2( dot(p,vec2(127.1,311.7)),
 	    dot(p,vec2(269.5,183.3)) );  
-  return -1.0 + 2.0*fract(sin(p)*43758.5453123);
+  return -1.0 + 2.0 * fract(sin(p) * 43758.5453123);
 }
 
 float gnoise(in vec2 p) {
@@ -51,13 +51,23 @@ float pnoise(in vec2 p,in float amplitude,in float frequency,in float persistenc
 float computeHeight(in vec2 p) {
   
   // version plan
-  return 0.0;
+  //return 0.0;
   
   // version sinus statique
-  //return 0.5*sin(p.x*10);
+  //return 0.5 * sin(p.x * 10);
 
   // version sinus animé 
   //return 0.2*sin((p.x+motion.x)*30);
+
+  // version "bruit"
+  vec2 pModif = p + motion.xy;
+  float h = pnoise(pModif, 1.0, 1.0, 0.5, 6);
+
+  if(h < 0) {
+      h = 0;
+  }
+
+  return h;
 }
 
 

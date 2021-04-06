@@ -64,7 +64,11 @@ OBJECTS       = shader.o \
 		camera.o \
 		viewer.o \
 		main.o
-DIST          = shaders/terrain.frag \
+DIST          = shaders/noise.frag \
+		shaders/noise.vert \
+		shaders/normal.frag \
+		shaders/normal.vert \
+		shaders/terrain.frag \
 		shaders/terrain.vert \
 		/usr/lib/x86_64-linux-gnu/qt5/mkspecs/features/spec_pre.prf \
 		/usr/lib/x86_64-linux-gnu/qt5/mkspecs/common/unix.conf \

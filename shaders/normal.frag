@@ -37,5 +37,4 @@ vec3 n = normalize(cross(n1,n2));
 
 
 outbuffer = vec4(n,value(texture(heightmap,texcoord)));
-
 }
