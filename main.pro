@@ -13,3 +13,11 @@ HEADERS   = shader.h grid.h trackball.h camera.h viewer.h
 
 CONFIG   += qt opengl warn_on thread uic4 release
 QT       *= xml opengl core
+
+DISTFILES += \
+    shaders/noise.frag \
+    shaders/noise.vert \
+    shaders/normal.frag \
+    shaders/normal.vert \
+    shaders/terrain.frag \
+    shaders/terrain.vert
