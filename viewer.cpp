@@ -161,20 +161,77 @@ void Viewer::deleteVAO() {
   glDeleteVertexArrays(1,&_vaoQuadSea);*/
 }
 
+void Viewer::createFBO() {
+  // Ids needed for the FBO and associated textures
+  glGenFramebuffers(1,&_fbo);
+  glGenTextures(1,&_rendNormalId);
+  glGenTextures(1,&_rendColorId);
+  glGenTextures(1,&_rendDepthId);
+}
+
+void Viewer::initFBO() {
+ // create the texture for rendering colors
+  glBindTexture(GL_TEXTURE_2D,_rendColorId);
+  glTexImage2D(GL_TEXTURE_2D, 0,GL_RGBA32F,width(),height(),0,GL_RGBA,GL_FLOAT,NULL);
+  glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+  glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+  glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+  glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+
+  // create the texture for rendering normals
+  glBindTexture(GL_TEXTURE_2D,_rendNormalId);
+  glTexImage2D(GL_TEXTURE_2D, 0,GL_RGBA32F,width(),height(),0,GL_RGBA,GL_FLOAT,NULL);
+  glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+  glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+  glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+  glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+
+  // create the texture for rendering depth values
+  glBindTexture(GL_TEXTURE_2D,_rendDepthId);
+  glTexImage2D(GL_TEXTURE_2D,0,GL_DEPTH_COMPONENT24,width(),height(),0,GL_DEPTH_COMPONENT,GL_FLOAT,NULL);
+  glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+  glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+  glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+  glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+
+  // attach textures to framebuffer object
+  glBindFramebuffer(GL_FRAMEBUFFER,_fbo);
+  glBindTexture(GL_TEXTURE_2D,_rendColorId);
+  glFramebufferTexture2D(GL_FRAMEBUFFER,GL_COLOR_ATTACHMENT0,GL_TEXTURE_2D,_rendColorId,0);
+  glBindTexture(GL_TEXTURE_2D,_rendNormalId);
+  glFramebufferTexture2D(GL_FRAMEBUFFER,GL_COLOR_ATTACHMENT1,GL_TEXTURE_2D,_rendNormalId,0);
+  glBindTexture(GL_TEXTURE_2D,_rendDepthId);
+  glFramebufferTexture2D(GL_FRAMEBUFFER,GL_DEPTH_ATTACHMENT,GL_TEXTURE_2D,_rendDepthId,0);
+  glBindFramebuffer(GL_FRAMEBUFFER,0);
+}
+
+void Viewer::deleteFBO() {
+  // delete all FBO Ids
+  glDeleteFramebuffers(1,&_fbo);
+  glDeleteTextures(1,&_rendNormalId);
+  glDeleteTextures(1,&_rendColorId);
+  glDeleteTextures(1,&_rendDepthId);
+}
+
 void Viewer::createShaders() {
   _terrainShader = new Shader();
   _terrainShader->load("shaders/terrain.vert","shaders/terrain.frag");
 
   _waterShader = new Shader();
   _waterShader->load("shaders/water.vert","shaders/water.frag");
+
+  _secondPassShader = new Shader();
+  _secondPassShader->load("shaders/secondPass.vert","shaders/secondPass.frag");
 }
 
 void Viewer::deleteShaders() {
   delete _terrainShader;
   delete _waterShader;
+  delete _secondPassShader;
 
   _terrainShader = NULL;
   _waterShader = NULL;
+  _secondPassShader = NULL;
 }
 
 void Viewer::reloadShaders() {
@@ -183,6 +240,9 @@ void Viewer::reloadShaders() {
   }
   if(_waterShader) {
     _waterShader->reload("shaders/water.vert", "shaders/water.frag");
+  }
+  if(_secondPassShader) {
+    _secondPassShader->reload("shaders/secondPass.vert","shaders/secondPass.frag");
   }
 }
 
@@ -221,6 +281,28 @@ void Viewer::drawScene(GLuint id) {
   sendTextures();
 }
 
+void Viewer::drawQuad() {
+  // shader id
+  const int id = _secondPassShader->id();
+
+  // send shader parameters
+  glUniform3fv(glGetUniformLocation(id,"light"),1,&(_light[0]));
+
+  // send textures
+  glActiveTexture(GL_TEXTURE0);
+  glBindTexture(GL_TEXTURE_2D,_rendColorId);
+  glUniform1i(glGetUniformLocation(id,"colormap"),0);
+
+  glActiveTexture(GL_TEXTURE0+1);
+  glBindTexture(GL_TEXTURE_2D,_rendNormalId);
+  glUniform1i(glGetUniformLocation(id,"normalmap"),1);
+
+  // Draw the 2 triangles !
+  glBindVertexArray(_vaoQuad);
+  glDrawArrays(GL_TRIANGLES,0,6);
+  glBindVertexArray(0);
+}
+
 void Viewer::paintGL() {
   // increase the time motion
   _timeMotion.x += 0.01;
@@ -234,8 +316,18 @@ void Viewer::paintGL() {
   // clear buffers
   glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
+  // activate the created framebuffer object
+  glBindFramebuffer(GL_FRAMEBUFFER,_fbo);
+
   // activate the buffer shader 
   glUseProgram(_terrainShader->id());
+
+  GLenum bufferlist [] = {GL_COLOR_ATTACHMENT0,GL_COLOR_ATTACHMENT1};
+
+  glDrawBuffers(2,bufferlist);
+
+  // clear buffers
+  glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
   // generate the map
   drawScene(_terrainShader->id());
@@ -246,8 +338,20 @@ void Viewer::paintGL() {
   // generate the map
   drawScene(_waterShader->id());
 
+  // desactivate fbo
+  glBindFramebuffer(GL_FRAMEBUFFER,0);
+
   // disable depth test 
   glDisable(GL_DEPTH_TEST);
+
+  // clear everything
+  glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+
+  // activate the shader
+  glUseProgram(_secondPassShader->id());
+
+  // Draw the triangles !
+  drawQuad();
 
   // disable shader 
   glUseProgram(0);
@@ -256,6 +360,7 @@ void Viewer::paintGL() {
 void Viewer::resizeGL(int width,int height) {
   _cam->initialize(width,height,false);
   glViewport(0,0,width,height);
+  initFBO();
   updateGL();
 }
 
@@ -388,6 +493,10 @@ void Viewer::initializeGL() {
 
   // init VAO/VBO
   createVAO();
+
+  // init FBO
+  createFBO();
+  initFBO();
 
   // starts the timer 
   _timer->start();

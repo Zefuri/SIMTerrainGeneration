@@ -46,12 +46,17 @@ class Viewer : public QGLWidget {
   void createVAO();
   void deleteVAO();
 
+  void createFBO();
+  void deleteFBO();
+  void initFBO();
+
   void createShaders();
   void deleteShaders();
   void reloadShaders();
   
   // drawing functions 
   void drawScene(GLuint id);
+  void drawQuad();
 
   QTimer        *_timer;    // timer that controls the animation
 
@@ -67,6 +72,7 @@ class Viewer : public QGLWidget {
   // les shaders 
   Shader *_terrainShader;
   Shader *_waterShader;
+  Shader *_secondPassShader;
 
   // les textures
   GLuint _texIds[2];
@@ -82,6 +88,14 @@ class Viewer : public QGLWidget {
   GLuint _sea[2];
   GLuint _vaoQuadSea;
   GLuint _quadSea;*/
+
+  // render texture ids
+  GLuint _rendNormalId;
+  GLuint _rendColorId;
+  GLuint _rendDepthId;
+
+  // fbo id
+  GLuint _fbo;
 
   unsigned int _ndResol;
 };

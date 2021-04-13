@@ -19,6 +19,8 @@ DISTFILES += \
     shaders/noise.vert \
     shaders/normal.frag \
     shaders/normal.vert \
+    shaders/secondPass.frag \
+    shaders/secondPass.vert \
     shaders/terrain.frag \
     shaders/terrain.vert \
     shaders/water.frag \
