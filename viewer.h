@@ -56,23 +56,32 @@ class Viewer : public QGLWidget {
   QTimer        *_timer;    // timer that controls the animation
 
   Grid   *_grid;   // the grid
+  Grid   *_water;   // the water
   Camera *_cam;    // the camera
 
   glm::vec3 _light;  // light direction
-  glm::vec3 _motion; // motion offset for the noise texture 
+  glm::vec3 _motion; // motion offset for the noise texture
+  glm::vec3 _timeMotion; // motion offset for the noise texture
   bool      _mode;   // camera motion or light motion
 
   // les shaders 
   Shader *_terrainShader;
+  Shader *_waterShader;
 
   // les textures
   GLuint _texIds[2];
 
-  // vbo/vao ids 
+  // vbo/vao terrain ids
   GLuint _vaoTerrain;
   GLuint _terrain[2];
   GLuint _vaoQuad;
   GLuint _quad;
+
+  // vbo/vao Sea ids
+  /*GLuint _vaoSea;
+  GLuint _sea[2];
+  GLuint _vaoQuadSea;
+  GLuint _quadSea;*/
 
   unsigned int _ndResol;
 };

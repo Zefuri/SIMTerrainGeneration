@@ -9,7 +9,7 @@ uniform mat4 projMat;     // projection matrix
 uniform mat3 normalMat;   // normal matrix
 uniform vec3 light;
 uniform vec3 motion;
-uniform float time;
+uniform vec3 time_motion;
 
 // out variables 
 out vec3 normalView;
@@ -62,8 +62,8 @@ float computeHeight(in vec2 p) {
   //return 0.2*sin((p.x+motion.x)*30);
 
   // version "bruit"
-  vec2 pModif = p + motion.xy;
-  float h = pnoise(pModif, 1.0, 1.0, 0.5, 6);
+  vec2 pModif = p + motion.xy + time_motion.xy;
+  float h = pnoise(pModif, 0.3, 0.5, 0.5, 10);
 
   return h;
 }
@@ -90,7 +90,7 @@ void main() {
   
   vec3 p = vec3(position.xy,h);
 
-  uvcoord = position.xy * 10.0;
+  uvcoord = position.xy * 5.0;
 
   gl_Position =  projMat*mdvMat*vec4(p,1);
   normalView  = normalize(normalMat*n);

@@ -3,7 +3,7 @@
 // input uniforms 
 uniform vec3 light;
 uniform vec3 motion;
-uniform sampler2D colormap_montagne;
+uniform sampler2D colormap_eau;
 
 // in variables 
 in vec3  normalView;
@@ -19,7 +19,7 @@ void main() {
   const vec3 specular = vec3(0.8,0.2,0.2);
   const float et = 50.0;
 
-  vec4 texColor = texture(colormap_montagne, uvcoord);
+  vec4 texColor = texture(colormap_eau, uvcoord);
 
   vec3 n = normalize(normalView);
   vec3 e = normalize(eyeView);

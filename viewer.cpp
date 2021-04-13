@@ -11,12 +11,14 @@ Viewer::Viewer(char *,const QGLFormat &format)
     _timer(new QTimer(this)),
     _light(glm::vec3(0,0,1)),
     _motion(glm::vec3(0,0,0)),
+    _timeMotion(glm::vec3(0,0,0)),
     _mode(false),
     _ndResol(512) {
 
   setlocale(LC_ALL,"C");
 
   _grid = new Grid(_ndResol,-1.0f,1.0f);
+  //_water = new Grid(_ndResol,-1.0f,1.0f);
   _cam  = new Camera(1.0f,glm::vec3(0.0f,0.0f,0.0f));
 
   _timer->setInterval(10);
@@ -26,6 +28,7 @@ Viewer::Viewer(char *,const QGLFormat &format)
 Viewer::~Viewer() {
   delete _timer;
   delete _grid;
+  //delete _water;
   delete _cam;
 
   // delete all GPU objects
@@ -97,6 +100,7 @@ void Viewer::createVAO() {
   //GLuint _terrain[2];
   //GLuint _quad;
 
+  // ---------------- TERRAIN -------------------
   const GLfloat quadData[] = {-1.0f,-1.0f,0.0f, 1.0f,-1.0f,0.0f, -1.0f,1.0f,0.0f, -1.0f,1.0f,0.0f, 1.0f,-1.0f,0.0f, 1.0f,1.0f,0.0f };
 
   glGenBuffers(2,_terrain);
@@ -119,6 +123,30 @@ void Viewer::createVAO() {
   glBufferData(GL_ARRAY_BUFFER, sizeof(quadData),quadData,GL_STATIC_DRAW);
   glVertexAttribPointer(0,3,GL_FLOAT,GL_FALSE,0,(void *)0);
   glEnableVertexAttribArray(0);
+
+  // ---------------- WATER -------------------
+  /*const GLfloat quadDataW[] = {-1.0f,-1.0f,0.0f, 1.0f,-1.0f,0.0f, -1.0f,1.0f,0.0f, -1.0f,1.0f,0.0f, 1.0f,-1.0f,0.0f, 1.0f,1.0f,0.0f };
+
+  glGenBuffers(2,_sea);
+  glGenBuffers(1,&_quadSea);
+  glGenVertexArrays(1,&_vaoSea);
+  glGenVertexArrays(1,&_vaoQuadSea);
+
+  // create the VBO associated with the grid (the terrain)
+  glBindVertexArray(_vaoSea);
+  glBindBuffer(GL_ARRAY_BUFFER,_sea[0]); // vertices
+  glBufferData(GL_ARRAY_BUFFER,_water->nbVertices()*3*sizeof(float),_water->vertices(),GL_STATIC_DRAW);
+  glVertexAttribPointer(0,3,GL_FLOAT,GL_FALSE,0,(void *)0);
+  glEnableVertexAttribArray(0);
+  glBindBuffer(GL_ELEMENT_ARRAY_BUFFER,_sea[1]); // indices
+  glBufferData(GL_ELEMENT_ARRAY_BUFFER,_water->nbFaces()*3*sizeof(int),_water->faces(),GL_STATIC_DRAW);
+
+  // create the VBO associated with the screen quad
+  glBindVertexArray(_vaoQuadSea);
+  glBindBuffer(GL_ARRAY_BUFFER,_quadSea); // vertices
+  glBufferData(GL_ARRAY_BUFFER, sizeof(quadData),quadData,GL_STATIC_DRAW);
+  glVertexAttribPointer(0,3,GL_FLOAT,GL_FALSE,0,(void *)0);
+  glEnableVertexAttribArray(0);*/
 }
 
 void Viewer::deleteVAO() {
@@ -126,23 +154,36 @@ void Viewer::deleteVAO() {
   glDeleteBuffers(1,&_quad);
   glDeleteVertexArrays(1,&_vaoTerrain);
   glDeleteVertexArrays(1,&_vaoQuad);
+
+  /*glDeleteBuffers(2,_sea);
+  glDeleteBuffers(1,&_quadSea);
+  glDeleteVertexArrays(1,&_vaoSea);
+  glDeleteVertexArrays(1,&_vaoQuadSea);*/
 }
 
 void Viewer::createShaders() {
   _terrainShader = new Shader();
-  
   _terrainShader->load("shaders/terrain.vert","shaders/terrain.frag");
+
+  _waterShader = new Shader();
+  _waterShader->load("shaders/water.vert","shaders/water.frag");
 }
 
 void Viewer::deleteShaders() {
   delete _terrainShader;
+  delete _waterShader;
 
   _terrainShader = NULL;
+  _waterShader = NULL;
 }
 
 void Viewer::reloadShaders() {
-  if(_terrainShader)
-    _terrainShader->reload("shaders/terrain.vert","shaders/terrain.frag");
+  if(_terrainShader) {
+    _terrainShader->reload("shaders/terrain.vert", "shaders/terrain.frag");
+  }
+  if(_waterShader) {
+    _waterShader->reload("shaders/water.vert", "shaders/water.frag");
+  }
 }
 
 void Viewer::sendTextures() {
@@ -154,7 +195,7 @@ void Viewer::sendTextures() {
   // send textures
   glActiveTexture(GL_TEXTURE1);
   glBindTexture(GL_TEXTURE_2D,_texIds[1]);
-  glUniform1i(glGetUniformLocation(_terrainShader->id(), "colormap_eau"), 1);
+  glUniform1i(glGetUniformLocation(_waterShader->id(), "colormap_eau"), 1);
 }
 
 void Viewer::drawScene(GLuint id) {
@@ -165,22 +206,25 @@ void Viewer::drawScene(GLuint id) {
   glUniformMatrix3fv(glGetUniformLocation(id,"normalMat"),1,GL_FALSE,&(_cam->normalMatrix()[0][0]));
   glUniform3fv(glGetUniformLocation(id,"light"),1,&(_light[0]));
   glUniform3fv(glGetUniformLocation(id,"motion"),1,&(_motion[0]));
+  glUniform3fv(glGetUniformLocation(id,"time_motion"),1,&(_timeMotion[0]));
 
-  GLint64 clock;
-  glGetInteger64v(GL_TIMESTAMP, &clock);
-  GLfloat time = clock / 1000000.0;
-  glUniform1f(glGetUniformLocation(id,"time"), time);
-
-  // draw faces 
+  // draw terrain faces
   glBindVertexArray(_vaoTerrain);
   glDrawElements(GL_TRIANGLES,3*_grid->nbFaces(),GL_UNSIGNED_INT,(void *)0);
   glBindVertexArray(0);
+
+  // draw water faces
+  /*glBindVertexArray(_vaoSea);
+  glDrawElements(GL_TRIANGLES,3*_water->nbFaces(),GL_UNSIGNED_INT,(void *)0);
+  glBindVertexArray(1);*/
 
   sendTextures();
 }
 
 void Viewer::paintGL() {
-  
+  // increase the time motion
+  _timeMotion.x += 0.01;
+
   // allow opengl depth test 
   glEnable(GL_DEPTH_TEST);
   
@@ -195,6 +239,12 @@ void Viewer::paintGL() {
 
   // generate the map
   drawScene(_terrainShader->id());
+
+  // activate the buffer shader
+  glUseProgram(_waterShader->id());
+
+  // generate the map
+  drawScene(_waterShader->id());
 
   // disable depth test 
   glDisable(GL_DEPTH_TEST);

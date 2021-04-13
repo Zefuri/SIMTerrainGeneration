@@ -21,4 +21,6 @@ DISTFILES += \
     shaders/normal.vert \
     shaders/terrain.frag \
     shaders/terrain.vert \
+    shaders/water.frag \
+    shaders/water.vert \
     textures/montagne.jpg
