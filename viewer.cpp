@@ -313,9 +313,6 @@ void Viewer::paintGL() {
   // screen viewport
   glViewport(0,0,width(),height());
 
-  // clear buffers
-  glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-
   // activate the created framebuffer object
   glBindFramebuffer(GL_FRAMEBUFFER,_fbo);
 

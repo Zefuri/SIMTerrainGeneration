@@ -12,6 +12,7 @@ in vec2 uvcoord;
 
 // out buffers 
 layout(location = 0) out vec4 outColor;
+layout(location = 1) out vec4 outColorNormal;
 
 void main() {
   //const vec3 ambient  = vec3(0.7, 0.4, 0.2);
@@ -33,4 +34,5 @@ void main() {
 
   // outColor = texColor * vec4(color, 1.0);
   outColor = vec4(color, 0.5);
+  outColorNormal = n;
 }
