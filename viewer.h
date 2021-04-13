@@ -39,6 +39,9 @@ class Viewer : public QGLWidget {
   virtual void mouseMoveEvent(QMouseEvent *me);
 
  private:
+  void createTextures();
+  void deleteTextures();
+  void sendTextures();
   // OpenGL objects creation
   void createVAO();
   void deleteVAO();
@@ -61,7 +64,10 @@ class Viewer : public QGLWidget {
 
   // les shaders 
   Shader *_terrainShader;
-  
+
+  // les textures
+  GLuint _texIds[2];
+
   // vbo/vao ids 
   GLuint _vaoTerrain;
   GLuint _terrain[2];

@@ -9,10 +9,13 @@ uniform mat4 projMat;     // projection matrix
 uniform mat3 normalMat;   // normal matrix
 uniform vec3 light;
 uniform vec3 motion;
+uniform float time;
 
 // out variables 
 out vec3 normalView;
 out vec3 eyeView;
+out vec2 uvcoord;
+flat out int textureID;
 
 // fonctions utiles pour créer des terrains en général
 vec2 hash(vec2 p) {
@@ -63,8 +66,10 @@ float computeHeight(in vec2 p) {
   vec2 pModif = p + motion.xy;
   float h = pnoise(pModif, 1.0, 1.0, 0.5, 6);
 
-  if(h < 0) {
-      h = 0;
+  if(h <= 0) {
+      float a = pModif.x + time;
+      float cosA = cos(a);
+      h = cosA / 100.0;
   }
 
   return h;
@@ -92,6 +97,14 @@ void main() {
   
   vec3 p = vec3(position.xy,h);
   
+  if(h > 0) {
+      textureID = 0;
+      uvcoord = position.xy * 10.0;
+  } else {
+      textureID = 1;
+      uvcoord = position.xy * 5.0;
+  }
+
   gl_Position =  projMat*mdvMat*vec4(p,1);
   normalView  = normalize(normalMat*n);
   eyeView     = normalize((mdvMat*vec4(p,1.0)).xyz);

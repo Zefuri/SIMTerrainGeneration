@@ -33,6 +33,62 @@ Viewer::~Viewer() {
   deleteVAO(); 
 }
 
+void Viewer::createTextures() {
+  QImage image;
+
+  // enable the use of 2D textures
+  glEnable(GL_TEXTURE_2D);
+
+  // ---------- MONTAGNE ---------------
+  // create one texture on the GPU
+  glGenTextures(1, &(_texIds[0]));
+
+  // load an image (CPU side)
+  image = QGLWidget::convertToGLFormat(QImage("textures/montagne.jpg"));
+
+  // activate this texture (the current one)
+  glBindTexture(GL_TEXTURE_2D, _texIds[0]);
+
+  // set texture parameters
+  glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
+  glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+  glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
+  glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
+
+  // transfer data from CPU to GPU memory
+  glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA32F, image.width(), image.height(), 0, GL_RGBA, GL_UNSIGNED_BYTE, (const GLvoid*) image.bits());
+
+  // generate mipmaps
+  glGenerateMipmap(GL_TEXTURE_2D);
+
+  // ---------- EAU ---------------
+  // create one texture on the GPU
+  glGenTextures(2, &(_texIds[1]));
+
+  // load an image (CPU side)
+  image = QGLWidget::convertToGLFormat(QImage("textures/eau.jpg"));
+
+  // activate this texture (the current one)
+  glBindTexture(GL_TEXTURE_2D, _texIds[1]);
+
+  // set texture parameters
+  glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
+  glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+  glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
+  glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
+
+  // transfer data from CPU to GPU memory
+  glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA32F, image.width(), image.height(), 0, GL_RGBA, GL_UNSIGNED_BYTE, (const GLvoid*) image.bits());
+
+  // generate mipmaps
+  glGenerateMipmap(GL_TEXTURE_2D);
+}
+
+void Viewer::deleteTextures() {
+  glDeleteTextures(1,&(_texIds[0]));
+  glDeleteTextures(2,&(_texIds[1]));
+}
+
 void Viewer::createVAO() {
   //the variable _grid should be an instance of Grid
   //the .h file should contain the following VAO/buffer ids
@@ -89,6 +145,17 @@ void Viewer::reloadShaders() {
     _terrainShader->reload("shaders/terrain.vert","shaders/terrain.frag");
 }
 
+void Viewer::sendTextures() {
+  // send textures
+  glActiveTexture(GL_TEXTURE0);
+  glBindTexture(GL_TEXTURE_2D,_texIds[0]);
+  glUniform1i(glGetUniformLocation(_terrainShader->id(), "colormap_montagne"), 0);
+
+  // send textures
+  glActiveTexture(GL_TEXTURE1);
+  glBindTexture(GL_TEXTURE_2D,_texIds[1]);
+  glUniform1i(glGetUniformLocation(_terrainShader->id(), "colormap_eau"), 1);
+}
 
 void Viewer::drawScene(GLuint id) {
 
@@ -99,10 +166,17 @@ void Viewer::drawScene(GLuint id) {
   glUniform3fv(glGetUniformLocation(id,"light"),1,&(_light[0]));
   glUniform3fv(glGetUniformLocation(id,"motion"),1,&(_motion[0]));
 
+  GLint64 clock;
+  glGetInteger64v(GL_TIMESTAMP, &clock);
+  GLfloat time = clock / 1000000.0;
+  glUniform1f(glGetUniformLocation(id,"time"), time);
+
   // draw faces 
   glBindVertexArray(_vaoTerrain);
   glDrawElements(GL_TRIANGLES,3*_grid->nbFaces(),GL_UNSIGNED_INT,(void *)0);
   glBindVertexArray(0);
+
+  sendTextures();
 }
 
 void Viewer::paintGL() {
@@ -259,10 +333,13 @@ void Viewer::initializeGL() {
   // init shaders 
   createShaders();
 
+  // init textures
+  createTextures();
+
   // init VAO/VBO
   createVAO();
 
   // starts the timer 
-  //_timer->start();
+  _timer->start();
 }
 
