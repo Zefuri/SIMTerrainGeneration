@@ -9,6 +9,7 @@ uniform sampler2D colormap_montagne;
 in vec3  normalView;
 in vec3  eyeView;
 in vec2 uvcoord;
+in float height;
 
 // out buffers 
 layout(location = 0) out vec4 outColor;
@@ -31,6 +32,8 @@ void main() {
 
   vec3 color = ambient + diff*diffuse + spec*specular;
 
-  outColor = texColor * vec4(color, 1.0);
-  outColorNormal = n;
+  if(height > 0) {
+    outColor = texColor * vec4(color, 1.0);
+    outColorNormal = vec4(n, height);
+  }
 }

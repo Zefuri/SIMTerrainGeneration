@@ -1,7 +1,7 @@
 #version 330
 
 // mettre 1 ou 0 pour activer / désactiver les effets
-#define FOG_EFFECT 1
+#define FOG_EFFECT 0
 #define PIXEL_ART 0
 #define MULTI_OUTPUT 0
 
