@@ -1,7 +1,7 @@
 #version 330
 
 // mettre 1 ou 0 pour activer / désactiver les effets
-#define FOG_EFFECT 0
+#define FOG_EFFECT 1
 #define PIXEL_ART 0
 #define MULTI_OUTPUT 0
 
@@ -30,9 +30,9 @@ vec4 shade(in vec2 coord) {
 #if FOG_EFFECT
   // on recupere ce qui se trouve dans le canal alpha (i.e. la profondeur)
   // on peut le modifier eventuellement, puis on clampe les valeurs entre 0 et 1
-  float d = clamp(nd.w*1.5,0.0,1.0);
+  float d = clamp(nd.w * 1.5, 0.0, 1.0);
   // couleur du brouillard
-  vec4 fogColor = vec4(0.8,0.75,0.76,1.0);
+  vec4 fogColor = vec4(0.8, 0.75, 0.76, 1.0);
   // on modifie la couleur avec la couleur du brouillard
   // en fonction de la profondeur (simple interpolation lineaire ici)
   color = mix(color,fogColor,d);

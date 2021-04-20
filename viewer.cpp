@@ -164,12 +164,21 @@ void Viewer::deleteVAO() {
 void Viewer::createFBO() {
   // Ids needed for the FBO and associated textures
   glGenFramebuffers(1,&_fbo);
+  glGenTextures(1,&_rendHeightId);
   glGenTextures(1,&_rendNormalId);
   glGenTextures(1,&_rendColorId);
   glGenTextures(1,&_rendDepthId);
 }
 
 void Viewer::initFBO() {
+    // create the texture for rendering colors
+     glBindTexture(GL_TEXTURE_2D,_rendHeightId);
+     glTexImage2D(GL_TEXTURE_2D, 0,GL_RGBA32F,width(),height(),0,GL_RGBA,GL_FLOAT,NULL);
+     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+
  // create the texture for rendering colors
   glBindTexture(GL_TEXTURE_2D,_rendColorId);
   glTexImage2D(GL_TEXTURE_2D, 0,GL_RGBA32F,width(),height(),0,GL_RGBA,GL_FLOAT,NULL);
@@ -196,10 +205,12 @@ void Viewer::initFBO() {
 
   // attach textures to framebuffer object
   glBindFramebuffer(GL_FRAMEBUFFER,_fbo);
+  glBindTexture(GL_TEXTURE_2D,_rendHeightId);
+  glFramebufferTexture2D(GL_FRAMEBUFFER,GL_COLOR_ATTACHMENT0,GL_TEXTURE_2D,_rendHeightId,0);
   glBindTexture(GL_TEXTURE_2D,_rendColorId);
-  glFramebufferTexture2D(GL_FRAMEBUFFER,GL_COLOR_ATTACHMENT0,GL_TEXTURE_2D,_rendColorId,0);
+  glFramebufferTexture2D(GL_FRAMEBUFFER,GL_COLOR_ATTACHMENT1,GL_TEXTURE_2D,_rendColorId,0);
   glBindTexture(GL_TEXTURE_2D,_rendNormalId);
-  glFramebufferTexture2D(GL_FRAMEBUFFER,GL_COLOR_ATTACHMENT1,GL_TEXTURE_2D,_rendNormalId,0);
+  glFramebufferTexture2D(GL_FRAMEBUFFER,GL_COLOR_ATTACHMENT2,GL_TEXTURE_2D,_rendNormalId,0);
   glBindTexture(GL_TEXTURE_2D,_rendDepthId);
   glFramebufferTexture2D(GL_FRAMEBUFFER,GL_DEPTH_ATTACHMENT,GL_TEXTURE_2D,_rendDepthId,0);
   glBindFramebuffer(GL_FRAMEBUFFER,0);
@@ -208,6 +219,7 @@ void Viewer::initFBO() {
 void Viewer::deleteFBO() {
   // delete all FBO Ids
   glDeleteFramebuffers(1,&_fbo);
+  glDeleteTextures(1,&_rendHeightId);
   glDeleteTextures(1,&_rendNormalId);
   glDeleteTextures(1,&_rendColorId);
   glDeleteTextures(1,&_rendDepthId);
@@ -278,6 +290,11 @@ void Viewer::drawScene(GLuint id) {
   glDrawElements(GL_TRIANGLES,3*_water->nbFaces(),GL_UNSIGNED_INT,(void *)0);
   glBindVertexArray(1);*/
 
+  // send textures
+  glActiveTexture(GL_TEXTURE0);
+  glBindTexture(GL_TEXTURE_2D,_rendHeightId);
+  glUniform1i(glGetUniformLocation(id,"heightmap"),0);
+
   sendTextures();
 }
 
@@ -289,13 +306,13 @@ void Viewer::drawQuad() {
   glUniform3fv(glGetUniformLocation(id,"light"),1,&(_light[0]));
 
   // send textures
-  glActiveTexture(GL_TEXTURE0);
-  glBindTexture(GL_TEXTURE_2D,_rendColorId);
-  glUniform1i(glGetUniformLocation(id,"colormap"),0);
-
   glActiveTexture(GL_TEXTURE0+1);
+  glBindTexture(GL_TEXTURE_2D,_rendColorId);
+  glUniform1i(glGetUniformLocation(id,"colormap"),1);
+
+  glActiveTexture(GL_TEXTURE0+2);
   glBindTexture(GL_TEXTURE_2D,_rendNormalId);
-  glUniform1i(glGetUniformLocation(id,"normalmap"),1);
+  glUniform1i(glGetUniformLocation(id,"normalmap"),2);
 
   // Draw the 2 triangles !
   glBindVertexArray(_vaoQuad);
@@ -319,9 +336,9 @@ void Viewer::paintGL() {
   // activate the buffer shader 
   glUseProgram(_terrainShader->id());
 
-  GLenum bufferlist [] = {GL_COLOR_ATTACHMENT0,GL_COLOR_ATTACHMENT1};
+  GLenum bufferlist [] = {GL_COLOR_ATTACHMENT0, GL_COLOR_ATTACHMENT1, GL_COLOR_ATTACHMENT2};
 
-  glDrawBuffers(2,bufferlist);
+  glDrawBuffers(3,bufferlist);
 
   // clear buffers
   glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
@@ -329,17 +346,27 @@ void Viewer::paintGL() {
   // generate the map
   drawScene(_terrainShader->id());
 
+  // desactivate fbo
+  glBindFramebuffer(GL_FRAMEBUFFER,0);
+
+  // activate the created framebuffer object
+  glBindFramebuffer(GL_FRAMEBUFFER,_fbo);
+
   // activate the buffer shader
   glUseProgram(_waterShader->id());
+
+  GLenum bufferlist2 [] = {GL_COLOR_ATTACHMENT1, GL_COLOR_ATTACHMENT2};
+
+  glDrawBuffers(2,bufferlist2);
 
   // generate the map
   drawScene(_waterShader->id());
 
-  // desactivate fbo
-  glBindFramebuffer(GL_FRAMEBUFFER,0);
-
   // disable depth test 
   glDisable(GL_DEPTH_TEST);
+
+  // desactivate fbo
+  glBindFramebuffer(GL_FRAMEBUFFER,0);
 
   // clear everything
   glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);

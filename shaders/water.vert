@@ -10,12 +10,14 @@ uniform mat3 normalMat;   // normal matrix
 uniform vec3 light;
 uniform vec3 motion;
 uniform vec3 time_motion;
+uniform sampler2D heightmap;
 
 // out variables 
 out vec3 normalView;
 out vec3 eyeView;
 out vec2 uvcoord;
 out float height;
+out vec2 texcoord;
 
 // fonctions utiles pour créer des terrains en général
 vec2 hash(vec2 p) {
@@ -85,16 +87,18 @@ vec3 computeNormal(in vec2 p) {
 }
 
 void main() {
+  if(texture(heightmap, position.xy*0.5+0.5).w == 0.0) {
+      float h = computeHeight(position.xy);
+      vec3  n = computeNormal(position.xy);
 
-  float h = computeHeight(position.xy);
-  vec3  n = computeNormal(position.xy);
-  
-  vec3 p = vec3(position.xy,h);
+      vec3 p = vec3(position.xy,h);
 
-  uvcoord = position.xy * 5.0;
+      uvcoord = position.xy * 5.0;
 
-  gl_Position =  projMat*mdvMat*vec4(p,1);
-  normalView  = normalize(normalMat*n);
-  eyeView     = normalize((mdvMat*vec4(p,1.0)).xyz);
-  height = h;
+      gl_Position =  projMat*mdvMat*vec4(p,1);
+      normalView  = normalize(normalMat*n);
+      eyeView     = normalize((mdvMat*vec4(p,1.0)).xyz);
+      height = h;
+  }
+  texcoord = position.xy*0.5+0.5;
 }

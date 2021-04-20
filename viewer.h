@@ -90,6 +90,7 @@ class Viewer : public QGLWidget {
   GLuint _quadSea;*/
 
   // render texture ids
+  GLuint _rendHeightId;
   GLuint _rendNormalId;
   GLuint _rendColorId;
   GLuint _rendDepthId;

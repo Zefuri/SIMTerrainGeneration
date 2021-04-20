@@ -16,6 +16,7 @@ out vec3 normalView;
 out vec3 eyeView;
 out vec2 uvcoord;
 out float height;
+out float depth;
 
 // fonctions utiles pour créer des terrains en général
 vec2 hash(vec2 p) {
@@ -97,4 +98,5 @@ void main() {
   normalView  = normalize(normalMat*n);
   eyeView     = normalize((mdvMat*vec4(p,1.0)).xyz);
   height = h;
+  depth = -(mdvMat*vec4(position,1.0)).z/30.0;
 }
