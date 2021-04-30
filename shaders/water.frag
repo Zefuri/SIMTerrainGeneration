@@ -18,7 +18,7 @@ layout(location = 0) out vec4 outColor;
 layout(location = 1) out vec4 outColorNormal;
 
 void main() {
-  if(texture(heightmap, texcoord).w == 0.0) {
+  //if(texture(heightmap, texcoord).w == 0.0) {
       //const vec3 ambient  = vec3(0.7, 0.4, 0.2);
       const vec3 ambient  = vec3(0.1451, 0.9922, 0.9137);
       const vec3 diffuse  = vec3(0.3, 1.0, 1.0);
@@ -37,9 +37,9 @@ void main() {
       vec3 color = ambient + diff*diffuse + spec*specular;
 
       // outColor = texColor * vec4(color, 1.0);
-      if(height <= 0) {
+      //if(height <= 0) {
         outColor = vec4(color, 0.5);
         outColorNormal = vec4(n, height);
-      }
-  }
+      //}
+ //}
 }

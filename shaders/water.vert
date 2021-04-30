@@ -87,7 +87,7 @@ vec3 computeNormal(in vec2 p) {
 }
 
 void main() {
-  if(texture(heightmap, position.xy*0.5+0.5).w == 0.0) {
+  //if(texture(heightmap, position.xy*0.5+0.5).w == 0.0) {
       float h = computeHeight(position.xy);
       vec3  n = computeNormal(position.xy);
 
@@ -99,6 +99,6 @@ void main() {
       normalView  = normalize(normalMat*n);
       eyeView     = normalize((mdvMat*vec4(p,1.0)).xyz);
       height = h;
-  }
+  //}
   texcoord = position.xy*0.5+0.5;
 }
