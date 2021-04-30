@@ -2,9 +2,9 @@
 #define VIEWER_H
 
 // GLEW lib: needs to be included first!!
-#include <GL/glew.h> 
+#include <GL/glew.h>
 
-// OpenGL library 
+// OpenGL library
 #include <GL/gl.h>
 
 // OpenGL Utility library
@@ -29,7 +29,7 @@ class Viewer : public QGLWidget {
  public:
   Viewer(char *filename,const QGLFormat &format=QGLFormat::defaultFormat());
   ~Viewer();
-  
+
  protected :
   virtual void paintGL();
   virtual void initializeGL();
@@ -53,8 +53,8 @@ class Viewer : public QGLWidget {
   void createShaders();
   void deleteShaders();
   void reloadShaders();
-  
-  // drawing functions 
+
+  // drawing functions
   void drawScene(GLuint id);
   void drawQuad();
 
@@ -69,10 +69,12 @@ class Viewer : public QGLWidget {
   glm::vec3 _timeMotion; // motion offset for the noise texture
   bool      _mode;   // camera motion or light motion
 
-  // les shaders 
+  // les shaders
   Shader *_terrainShader;
   Shader *_waterShader;
   Shader *_secondPassShader;
+  Shader *_shadowMapShader;
+  Shader *_renderingShader;
 
   // les textures
   GLuint _texIds[2];

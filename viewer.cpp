@@ -33,7 +33,7 @@ Viewer::~Viewer() {
 
   // delete all GPU objects
   deleteShaders();
-  deleteVAO(); 
+  deleteVAO();
 }
 
 void Viewer::createTextures() {
@@ -234,16 +234,26 @@ void Viewer::createShaders() {
 
   _secondPassShader = new Shader();
   _secondPassShader->load("shaders/secondPass.vert","shaders/secondPass.frag");
+
+  _shadowMapShader = new Shader(); // will create the shadow map
+  _shadowMapShader->load("shaders/shadow-map.vert","shaders/shadow-map.frag");
+
+  _renderingShader = new Shader(); // render the scene, use shadow map
+  _renderingShader->load("shaders/rendering.vert","shaders/rendering.frag");
 }
 
 void Viewer::deleteShaders() {
   delete _terrainShader;
   delete _waterShader;
   delete _secondPassShader;
+  delete _shadowMapShader;
+  delete _renderingShader;
 
   _terrainShader = NULL;
   _waterShader = NULL;
   _secondPassShader = NULL;
+  _shadowMapShader = NULL;
+  _renderingShader = NULL;
 }
 
 void Viewer::reloadShaders() {
@@ -255,6 +265,12 @@ void Viewer::reloadShaders() {
   }
   if(_secondPassShader) {
     _secondPassShader->reload("shaders/secondPass.vert","shaders/secondPass.frag");
+  }
+  if(_shadowMapShader) {
+    _shadowMapShader->reload("shaders/shadow-map.vert","shaders/shadow-map.frag");
+  }
+  if(_renderingShader) {
+    _renderingShader->reload("shaders/rendering.vert","shaders/rendering.frag");
   }
 }
 
@@ -272,7 +288,7 @@ void Viewer::sendTextures() {
 
 void Viewer::drawScene(GLuint id) {
 
-  // send uniform variables 
+  // send uniform variables
   glUniformMatrix4fv(glGetUniformLocation(id,"mdvMat"),1,GL_FALSE,&(_cam->mdvMatrix()[0][0]));
   glUniformMatrix4fv(glGetUniformLocation(id,"projMat"),1,GL_FALSE,&(_cam->projMatrix()[0][0]));
   glUniformMatrix3fv(glGetUniformLocation(id,"normalMat"),1,GL_FALSE,&(_cam->normalMatrix()[0][0]));
@@ -324,16 +340,16 @@ void Viewer::paintGL() {
   // increase the time motion
   _timeMotion.x += 0.01;
 
-  // allow opengl depth test 
+  // allow opengl depth test
   glEnable(GL_DEPTH_TEST);
-  
+
   // screen viewport
   glViewport(0,0,width(),height());
 
   // activate the created framebuffer object
   glBindFramebuffer(GL_FRAMEBUFFER,_fbo);
 
-  // activate the buffer shader 
+  // activate the buffer shader
   glUseProgram(_terrainShader->id());
 
   GLenum bufferlist [] = {GL_COLOR_ATTACHMENT0, GL_COLOR_ATTACHMENT1, GL_COLOR_ATTACHMENT2};
@@ -362,7 +378,7 @@ void Viewer::paintGL() {
   // generate the map
   drawScene(_waterShader->id());
 
-  // disable depth test 
+  // disable depth test
   glDisable(GL_DEPTH_TEST);
 
   // desactivate fbo
@@ -377,7 +393,7 @@ void Viewer::paintGL() {
   // Draw the triangles !
   drawQuad();
 
-  // disable shader 
+  // disable shader
   glUseProgram(0);
 }
 
@@ -403,14 +419,14 @@ void Viewer::mousePressEvent(QMouseEvent *me) {
     _light[2] = 1.0f-std::max(fabs(_light[0]),fabs(_light[1]));
     _light = glm::normalize(_light);
     _mode = true;
-  } 
+  }
 
   updateGL();
 }
 
 void Viewer::mouseMoveEvent(QMouseEvent *me) {
   const glm::vec2 p((float)me->x(),(float)(height()-me->y()));
- 
+
   if(_mode) {
     // light mode
     _light[0] = (p[0]-(float)(width()/2))/((float)(width()/2));
@@ -451,15 +467,15 @@ void Viewer::keyPressEvent(QKeyEvent *ke) {
     _motion[2] -= step;
   }
 
-  
+
 
 
 
   // key a: play/stop animation
   if(ke->key()==Qt::Key_A) {
-    if(_timer->isActive()) 
+    if(_timer->isActive())
       _timer->stop();
-    else 
+    else
       _timer->start();
   }
 
@@ -467,7 +483,7 @@ void Viewer::keyPressEvent(QKeyEvent *ke) {
   if(ke->key()==Qt::Key_I) {
     _cam->initialize(width(),height(),true);
   }
-  
+
   // // key f: compute FPS
   // if(ke->key()==Qt::Key_F) {
   //   int elapsed;
@@ -482,7 +498,7 @@ void Viewer::keyPressEvent(QKeyEvent *ke) {
   //   cout << "FPS : " << t*1000.0 << endl;
   // }
 
-  // key r: reload shaders 
+  // key r: reload shaders
   if(ke->key()==Qt::Key_R) {
     reloadShaders();
   }
@@ -509,7 +525,7 @@ void Viewer::initializeGL() {
   // initialize camera
   _cam->initialize(width(),height(),true);
 
-  // init shaders 
+  // init shaders
   createShaders();
 
   // init textures
@@ -522,7 +538,6 @@ void Viewer::initializeGL() {
   createFBO();
   initFBO();
 
-  // starts the timer 
+  // starts the timer
   _timer->start();
 }
-

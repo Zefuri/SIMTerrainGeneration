@@ -32,10 +32,11 @@ vec4 shade(in vec2 coord) {
   // on peut le modifier eventuellement, puis on clampe les valeurs entre 0 et 1
   float d = clamp(nd.w * 1.5, 0.0, 1.0);
   // couleur du brouillard
-  vec4 fogColor = vec4(0.8, 0.75, 0.76, 1.0);
+  vec4 fogColor = vec4(d, d, d, d); //vec4(0.8, 0.75, 0.76, 1.0);
   // on modifie la couleur avec la couleur du brouillard
   // en fonction de la profondeur (simple interpolation lineaire ici)
   color = mix(color,fogColor,d);
+  //color = vec4(d, d, d, d);
 #endif // FOG_EFFECT
 
   return color;
@@ -45,18 +46,18 @@ void main() {
   vec2 coord = texcoord;
 
 #if PIXEL_ART
-  float nbpix = 200.0; // nb pixels 
+  float nbpix = 200.0; // nb pixels
   coord = floor(coord*nbpix)/nbpix;
 #endif // PIXEL_ART
-  
+
 #if MULTI_OUTPUT
   // on pourrait bien sur décider de dessiner
   // quelque chose de different dans chacun des outputs
   float nbout = 2.0; // nb outputs
   coord = mod(coord * nbout, vec2(1.0));
 #endif // MULTI_OUTPUT
-  
+
   vec4 color = shade(coord);
-  
+
   bufferColor = vec4(color);
 }

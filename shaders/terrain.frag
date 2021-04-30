@@ -1,11 +1,11 @@
 #version 330
 
-// input uniforms 
+// input uniforms
 uniform vec3 light;
 uniform vec3 motion;
 uniform sampler2D colormap_montagne;
 
-// in variables 
+// in variables
 in vec3  normalView;
 in vec3  eyeView;
 in vec2 uvcoord;
@@ -37,7 +37,7 @@ void main() {
   if(height > 0) {
     //outColor = texColor * vec4(color, 1.0);
     outColor = vec4(color, 1.0);
-    outColorNormal = vec4(n, depth);
+    outColorNormal = vec4(n, height);
     outHeightMap = vec4(0.0, 0.0, 0.0, height);
   } else {
     outHeightMap = vec4(0.0, 0.0, 0.0, 0.0);
